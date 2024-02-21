@@ -1,1 +1,2 @@
 add_subdirectory(identifiersModule)
+add_subdirectory(glossaryModule)
