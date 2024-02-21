@@ -22,6 +22,9 @@ public:
   SC_PROPERTY(Keynode("action_create_glossary"), ForceCreate)
   static ScAddr action_create_glossary;
 
+  SC_PROPERTY(Keynode("set_of_valid_glossary_parameters"))
+  static ScAddr set_of_valid_glossary_parameters;
+
 };
 
 }  // namespace glossaryModule

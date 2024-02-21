@@ -11,6 +11,8 @@
 
 namespace glossaryModule
 {
-ScAddr GlossaryKeynodes::action_create_glossary;
+    ScAddr GlossaryKeynodes::action_create_glossary;
+    ScAddr GlossaryKeynodes::set_of_valid_glossary_parameters;
+
 
 }  // namespace glossaryModule
