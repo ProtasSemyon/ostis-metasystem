@@ -19,10 +19,18 @@ class CreateGlossaryAgent : public ScAgent
   SC_GENERATED_BODY()
 
   private:
-    bool checkAction(ScAddr const & actionNode);
+    bool checkAction(ScAddr const & questionNode);
 
-    ScAddrVector getValidOptions(ScAddr const & parametersSetAddr);
+    ScAddrVector getValidSetElementsByTypeAndValidSet(
+      ScAddr const & set, 
+      ScType type, 
+      ScAddr const & validSet, 
+      std::string warnMessage);
 
+
+    std::string formatToLog(std::string const & message);
+
+    sc_result exitInvalidParams(std::string const & message, ScAddr const & questionNode);
 };
 
 }  // namespace glossaryModule

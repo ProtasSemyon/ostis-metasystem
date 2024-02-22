@@ -25,82 +25,134 @@ using namespace glossaryModule;
 
 SC_AGENT_IMPLEMENTATION(CreateGlossaryAgent)
 {
-    ScAddr const & actionNode = otherAddr;
+    ScAddr const & questionNode = otherAddr;
 
-    if (!checkAction(actionNode))
+    if (!checkAction(questionNode))
         return SC_RESULT_OK;
 
     SC_LOG_DEBUG("CreateGlossaryAgent started");
 
-    ScAddrVector subjectDomains = 
-        IteratorUtils::getAllWithType(
-            &m_memoryCtx,
-            IteratorUtils::getAnyByOutRelation(
-                &m_memoryCtx, 
-                actionNode, 
+    //Initialization
+    ScAddr subjectDomainsSetAddr = 
+        IteratorUtils::getAnyByOutRelation(
+                &m_memoryCtx,
+                questionNode, 
                 scAgentsCommon::CoreKeynodes::rrel_1
-            ),
-            ScType::NodeConstStruct
-        );
+            );
 
-    ScAddr outputLangAddr =
+    ScAddr langAddr = 
         IteratorUtils::getAnyByOutRelation(
             &m_memoryCtx,
-            actionNode, 
+            questionNode, 
             scAgentsCommon::CoreKeynodes::rrel_2
         );
 
-    ScAddrVector parameters = 
-        getValidOptions(
+    ScAddr parametersSetAddr = 
         IteratorUtils::getAnyByOutRelation(
-            &m_memoryCtx,
-            actionNode, 
-            scAgentsCommon::CoreKeynodes::rrel_3
-            )
+                &m_memoryCtx,
+                questionNode, 
+                scAgentsCommon::CoreKeynodes::rrel_3
+            );
+    
+    //Validation
+    if (!m_memoryCtx.IsElement(subjectDomainsSetAddr))
+    {
+        return exitInvalidParams("subject domains set node not found.", questionNode);
+    }
+    
+    if (!m_memoryCtx.IsElement(langAddr))
+    {
+        return exitInvalidParams("language node not found..", questionNode);
+    }
+
+    if (!m_memoryCtx.IsElement(parametersSetAddr))
+    {
+        parametersSetAddr = GlossaryKeynodes::default_glossary_parameters;
+        SC_LOG_WARNING(formatToLog(
+            "parameters set node not found. By default, "
+            + m_memoryCtx.HelperGetSystemIdtf(parametersSetAddr) + " is used."));
+    }
+
+    //Sets elements validation
+    ScAddrVector subjectDomains = 
+        getValidSetElementsByTypeAndValidSet(
+            subjectDomainsSetAddr, 
+            ScType::NodeConstStruct, 
+            GlossaryKeynodes::subject_domain, 
+            "is not a subject domain"
+        );        
+    
+    ScAddrVector parameters = 
+        getValidSetElementsByTypeAndValidSet(
+            parametersSetAddr, 
+            ScType::NodeConst, 
+            GlossaryKeynodes::valid_glossary_parameters, 
+            "is not a valid parameter"
         );
 
-    AgentUtils::finishAgentWork(&m_memoryCtx, actionNode, true);
+    AgentUtils::finishAgentWork(&m_memoryCtx, questionNode, true);
     SC_LOG_DEBUG("CreateGlossaryAgent finished");
 
     return SC_RESULT_OK;
 }
 
-bool CreateGlossaryAgent::checkAction(ScAddr const & actionNode) 
+bool CreateGlossaryAgent::checkAction(ScAddr const & questionNode) 
 {
     return m_memoryCtx.HelperCheckEdge(
             GlossaryKeynodes::action_create_glossary,
-            actionNode,
+            questionNode,
             ScType::EdgeAccessConstPosPerm
             );
 }
-
-ScAddrVector CreateGlossaryAgent::getValidOptions(ScAddr const & parametersSetAddr) 
+ScAddrVector CreateGlossaryAgent::getValidSetElementsByTypeAndValidSet(
+    ScAddr const & set, 
+    ScType type, 
+    ScAddr const & validSet, 
+    std::string warnMessage
+    ) 
 {
-    ScAddrVector resultOptions;
-    ScAddrVector parametersSetElements = IteratorUtils::getAllWithType(
-        &m_memoryCtx,
-        parametersSetAddr, 
-        ScType::NodeConst
-    );
-    
-    for (ScAddr const & currentParameter : parametersSetElements) 
+    ScAddrVector validSetElements;
+    ScAddrVector setElements =
+        IteratorUtils::getAllWithType(
+            &m_memoryCtx,
+            set,
+            type
+        );
+
+    for (ScAddr const & currentSetElement : setElements) 
     {
-        bool isParameterValid = m_memoryCtx.HelperCheckEdge(
-            GlossaryKeynodes::set_of_valid_glossary_parameters,
-            currentParameter,
-            ScType::EdgeAccessConstPosPerm);
+        bool isParameterValid = 
+            m_memoryCtx.HelperCheckEdge(
+                validSet,
+                currentSetElement,
+                ScType::EdgeAccessConstPosPerm
+            );
 
         if (isParameterValid)
         {
-            resultOptions.emplace_back(currentParameter);
+            validSetElements.emplace_back(currentSetElement);
         }
         else 
         { 
-            auto idtf = m_memoryCtx.HelperGetSystemIdtf(currentParameter);
-            SC_LOG_WARNING(idtf + " isn't valid parameter for CreateGlossaryAgent");
+            SC_LOG_WARNING(formatToLog(m_memoryCtx.HelperGetSystemIdtf(currentSetElement) + " " + warnMessage));
         }
     }
 
-    return resultOptions;
+    return validSetElements;
 }
+
+std::string CreateGlossaryAgent::formatToLog(std::string const & message)
+{
+    return "CreateGlossaryAgent: " + message;
+}
+
+sc_result CreateGlossaryAgent::exitInvalidParams(std::string const & message, ScAddr const & questionNode) 
+{
+    SC_LOG_ERROR(formatToLog(message));
+    utils::AgentUtils::finishAgentWork(&m_memoryCtx, questionNode, false);
+    return SC_RESULT_ERROR_INVALID_PARAMS;
+}
+
+
+
 
