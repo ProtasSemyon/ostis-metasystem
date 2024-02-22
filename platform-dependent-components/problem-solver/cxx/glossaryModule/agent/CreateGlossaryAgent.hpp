@@ -27,6 +27,9 @@ class CreateGlossaryAgent : public ScAgent
       ScAddr const & validSet, 
       std::string warnMessage);
 
+    ScAddr formResultNode(ScAddr const & setOfSubjDomains, ScAddrVector & answerElements);
+
+    void clearPreviousResultNode(ScAddr const & setOfSubjDomains);
 
     std::string formatToLog(std::string const & message);
 
