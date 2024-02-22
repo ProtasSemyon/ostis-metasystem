@@ -32,6 +32,9 @@ public:
   SC_PROPERTY(Keynode("subject_domain"), ForceCreate)
   static ScAddr subject_domain;
 
+  SC_PROPERTY(Keynode("nrel_glossary"), ForceCreate)
+  static ScAddr nrel_glossary;
+
   //Valid glossary parameters
   SC_PROPERTY(Keynode("nrel_main_idtf"), ForceCreate)
   static ScAddr nrel_main_idtf;

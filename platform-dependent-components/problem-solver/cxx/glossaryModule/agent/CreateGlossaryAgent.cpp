@@ -39,7 +39,7 @@ SC_AGENT_IMPLEMENTATION(CreateGlossaryAgent)
                 questionNode, 
                 scAgentsCommon::CoreKeynodes::rrel_1
             );
-
+    
     ScAddr langAddr = 
         IteratorUtils::getAnyByOutRelation(
             &m_memoryCtx,
@@ -89,8 +89,32 @@ SC_AGENT_IMPLEMENTATION(CreateGlossaryAgent)
             GlossaryKeynodes::valid_glossary_parameters, 
             "is not a valid parameter"
         );
+    
+    ScAddr const & resultsSetStruct = m_memoryCtx.CreateNode(ScType::NodeConstStruct);
+    ScAddr const & createGlossaryResultRelationPair = 
+        m_memoryCtx.CreateEdge(
+            ScType::EdgeDCommonConst, 
+            subjectDomainsSetAddr, 
+            resultsSetStruct
+        );
+    ScAddr const & relationAccessArc = 
+        m_memoryCtx.CreateEdge(
+            ScType::EdgeAccessConstPosPerm, 
+            GlossaryKeynodes::nrel_glossary, 
+            createGlossaryResultRelationPair);
 
-    AgentUtils::finishAgentWork(&m_memoryCtx, questionNode, true);
+    ScAddrVector answer = {
+        resultsSetStruct, 
+        createGlossaryResultRelationPair, 
+        relationAccessArc};
+
+    for (ScAddr const & subjDomain : subjectDomains)
+    {
+        ScAddr accessArc =  m_memoryCtx.CreateEdge(ScType::EdgeAccessConstPosPerm, resultsSetStruct, subjDomain);
+        answer.insert(answer.end(), {accessArc, subjDomain});
+    }
+
+    AgentUtils::finishAgentWork(&m_memoryCtx, questionNode, answer, true);
     SC_LOG_DEBUG("CreateGlossaryAgent finished");
 
     return SC_RESULT_OK;
@@ -149,7 +173,7 @@ std::string CreateGlossaryAgent::formatToLog(std::string const & message)
 sc_result CreateGlossaryAgent::exitInvalidParams(std::string const & message, ScAddr const & questionNode) 
 {
     SC_LOG_ERROR(formatToLog(message));
-    utils::AgentUtils::finishAgentWork(&m_memoryCtx, questionNode, false);
+    AgentUtils::finishAgentWork(&m_memoryCtx, questionNode, false);
     return SC_RESULT_ERROR_INVALID_PARAMS;
 }
 

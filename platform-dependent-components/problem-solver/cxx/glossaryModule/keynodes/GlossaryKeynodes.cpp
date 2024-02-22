@@ -19,6 +19,8 @@ namespace glossaryModule
 
   ScAddr GlossaryKeynodes::subject_domain;
 
+  ScAddr GlossaryKeynodes::nrel_glossary;
+
   //Valid glossary parameters
   ScAddr GlossaryKeynodes::nrel_main_idtf;
 
