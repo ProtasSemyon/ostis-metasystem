@@ -10,6 +10,21 @@ using namespace glossaryModule;
 
 ScAddr CreateGlossaryAgent::answerLang;
 
+std::vector<std::string> CreateGlossaryAgent::idtfsVarForAdd = {
+        "_defSet",
+        "_defSet2",
+        "_definition",
+        "_arc1",
+        "_arc2",
+        "_arc3",
+        "_arc4",
+        "_arc5",
+        "_arc6",
+        "_arc7",
+    };
+
+std::string CreateGlossaryAgent::entityVarIdtf = "_definition";
+
 SC_AGENT_IMPLEMENTATION(CreateGlossaryAgent)
 {
     ScAddr const & questionNode = otherAddr;
@@ -108,9 +123,7 @@ void CreateGlossaryAgent::clearPreviousResultNode(ScAddr const & setOfSubjDomain
 
     while (previousResultsIterator->Next())
     {
-        //m_memoryCtx.EraseElement(previousResultsIterator->Get(1));
         m_memoryCtx.EraseElement(previousResultsIterator->Get(2));
-        //m_memoryCtx.EraseElement(previousResultsIterator->Get(3));
     }
 }
 
@@ -216,6 +229,42 @@ sc_result CreateGlossaryAgent::exitInvalidParams(std::string const & message, Sc
     SC_LOG_ERROR(formatToLog(message));
     AgentUtils::finishAgentWork(&m_memoryCtx, questionNode, false);
     return SC_RESULT_ERROR_INVALID_PARAMS;
+}
+
+void CreateGlossaryAgent::makeDefinitionTemplate(ScAddr const & concept, ScAddr const & parameter, ScTemplate & templ)
+{
+    templ.Clear();
+    templ.Triple(
+        parameter, 
+        ScType::EdgeAccessVarPosPerm >> "_arc1", 
+        ScType::NodeVar >> "_defSet"
+    );
+    templ.Quintuple(
+        "_defSet",
+        ScType::EdgeAccessVarPosPerm >> "_arc2",
+        concept,
+        ScType::EdgeAccessVarPosPerm >> "_arc3",
+        scAgentsCommon::CoreKeynodes::rrel_key_sc_element
+    );
+    templ.Quintuple(
+        ScType::NodeVar >> "_defSet2",
+        ScType::EdgeDCommonVar >> "_arc4",
+        "_defSet", 
+        ScType::EdgeAccessVarPosPerm >> "_arc5",
+        scAgentsCommon::CoreKeynodes::nrel_sc_text_translation
+    );
+    templ.Quintuple(
+        "_defSet2",
+        ScType::EdgeAccessVarPosPerm >> "_arc6",
+        ScType::LinkVar >> "_definition",
+        ScType::EdgeAccessVarPosPerm >> "_arc7",
+        GlossaryKeynodes::rrel_example
+    );
+    templ.Triple(
+        CreateGlossaryAgent::answerLang, 
+        ScType::EdgeAccessVarPosPerm,
+        "_definition"
+    );
 }
 
 

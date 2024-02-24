@@ -44,6 +44,9 @@ public:
   SC_PROPERTY(Keynode("nrel_format"), ForceCreate)
   static ScAddr nrel_format;
 
+  SC_PROPERTY(Keynode("rrel_example"), ForceCreate)
+  static ScAddr rrel_example;
+  
   //Valid glossary parameters
   SC_PROPERTY(Keynode("nrel_main_idtf"), ForceCreate)
   static ScAddr nrel_main_idtf;
@@ -53,6 +56,15 @@ public:
 
   SC_PROPERTY(Keynode("nrel_system_identifier"), ForceCreate)
   static ScAddr nrel_system_identifier;
+
+  SC_PROPERTY(Keynode("definition"), ForceCreate)
+  static ScAddr definition;
+
+  SC_PROPERTY(Keynode("explanation"), ForceCreate)
+  static ScAddr explanation;
+
+  SC_PROPERTY(Keynode("note"), ForceCreate)
+  static ScAddr note;
 
 };
 

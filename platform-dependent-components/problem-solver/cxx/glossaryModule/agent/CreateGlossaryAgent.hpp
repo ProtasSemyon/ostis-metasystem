@@ -81,6 +81,14 @@ class CreateGlossaryAgent : public ScAgent
       ScAddr const & parameter, 
       ScAddr const & resultStructure,
       ScAddrVector & answer);
+
+    static void processConceptEntitySc(
+      ScMemoryContext * ms_context,
+      ScAddr const & concept, 
+      ScAddr const & parameter, 
+      ScAddr const & resultStructure,
+      ScAddrVector & answer);
+
     //SC processing end
 
     //SCn processing start
@@ -111,7 +119,13 @@ class CreateGlossaryAgent : public ScAgent
       ScAddr const & parameter,
       int indentLevel);
 
-    std::string getMainIdtf(ScAddr const & concept);
+    static std::string processConceptEntityScnTex(
+      ScMemoryContext * ms_context,
+      ScAddr const & concept,
+      ScAddr const & parameter,
+      int indentLevel);
+
+    static std::string getMainIdtf(ScMemoryContext * ms_context, ScAddr const & concept);
 
     //SCn processing end
 
@@ -119,7 +133,13 @@ class CreateGlossaryAgent : public ScAgent
 
     sc_result exitInvalidParams(std::string const & message, ScAddr const & questionNode);
 
+    static void makeDefinitionTemplate(ScAddr const & concept, ScAddr const & parameter, ScTemplate & templ);
+
     static ScAddr answerLang;
+
+    static std::vector<std::string> idtfsVarForAdd;
+
+    static std::string entityVarIdtf;
 };
 
 }  // namespace glossaryModule

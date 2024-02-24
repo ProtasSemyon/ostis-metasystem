@@ -1,4 +1,7 @@
 valid_glossary_parameters
   ->nrel_main_idtf;
   ->nrel_idtf;
-  ->nrel_system_identifier;;
+  ->nrel_system_identifier;
+  ->definition;
+  ->explanation;
+  ->note;;

@@ -7,14 +7,30 @@ using namespace glossaryModule;
 
 int const kIndentSize = 4;
 
+std::string const scnTexOutFile = "/home/smn/ostis/testTex/test.tex";
+
 std::string formatForTex(std::string const & input) 
 {
+    static std::map<char, std::string> specSymbols = {
+        {'_', "\\_"},
+        {'#', "\\#"},
+        {'$', "\\$"},
+        {'%', "\\%"},
+        {'&', "\\&"},
+        {'{', "\\{"},
+        {'}', "\\}"},
+        {'~', "$\\sim$"},
+        {'^', "$\\hat{}$"},
+        {'\\', "$\\backslash$"},
+        {'<', "$<$"},
+        {'>', "$>$"},
+    };
     std::string newInput;
     for (auto const & symbol : input) 
     {
-        if (symbol == '_')
+        if (specSymbols.find(symbol) != specSymbols.end())
         {
-            newInput += "\\_";
+            newInput += specSymbols[symbol];
         }
         else 
             newInput += symbol;
@@ -77,7 +93,10 @@ void CreateGlossaryAgent::formGlossaryScnTexFormat(
 
     int indentLevel = 1;
 
-    resultLinkContent += makeIndent(indentLevel) + "\\scnstructheader{Глоссарий для " + formatForTex(getMainIdtf(setOfSubjDomains)) +"}\n";
+    resultLinkContent += makeIndent(indentLevel) 
+        + "\\scnstructheader{Глоссарий для " 
+        + formatForTex(getMainIdtf(&m_memoryCtx, setOfSubjDomains)) 
+        +"}\n";
     resultLinkContent += makeIndent(indentLevel) + "\\begin{scnstruct}\n";
 
     ScnTexConceptsMap conceptsMap;
@@ -97,6 +116,10 @@ void CreateGlossaryAgent::formGlossaryScnTexFormat(
     resultLinkContent += makeIndent(indentLevel) + "\\end{scnstruct}\n";
     resultLinkContent += "\\end{SCn}\n";
 
+    std::ofstream out(scnTexOutFile);
+    out << resultLinkContent;
+    out.close();
+
     m_memoryCtx.SetLinkContent(resultLink, "<pre>" + resultLinkContent + "</pre>");
 }
 
@@ -110,9 +133,12 @@ void CreateGlossaryAgent::processConceptByParametersScnTex(
     static ScAddrVector parametersOrder = {
         GlossaryKeynodes::nrel_system_identifier,
         GlossaryKeynodes::nrel_idtf,
+        GlossaryKeynodes::definition,
+        GlossaryKeynodes::explanation,
+        GlossaryKeynodes::note,
     };
 
-    std::string mainIdtf = formatForTex(getMainIdtf(concept));
+    std::string mainIdtf = formatForTex(getMainIdtf(&m_memoryCtx, concept));
     std::string conceptInScnTex = makeIndent(indentLevel) + "\\scnheader{" + mainIdtf + "}\n";
 
     for (auto const & parameter : parametersOrder)
@@ -135,6 +161,9 @@ std::string CreateGlossaryAgent::processConceptByParameterScnTex(
     static ProcessConceptMapScnTex parameterFunctionsMap = {
         {GlossaryKeynodes::nrel_system_identifier, processConceptIdtfScnTex},
         {GlossaryKeynodes::nrel_idtf, processConceptIdtfScnTex},
+        {GlossaryKeynodes::definition, processConceptEntityScnTex},
+        {GlossaryKeynodes::explanation, processConceptEntityScnTex},
+        {GlossaryKeynodes::note, processConceptEntityScnTex},
     };
 
     if (parameterFunctionsMap.find(parameter) == parameterFunctionsMap.end())
@@ -184,10 +213,10 @@ std::string CreateGlossaryAgent::processConceptIdtfScnTex(
     return processingResult;
 }
 
-std::string CreateGlossaryAgent::getMainIdtf(ScAddr const & concept)
+std::string CreateGlossaryAgent::getMainIdtf(ScMemoryContext * ms_context, ScAddr const & concept)
 {
     ScIterator5Ptr mainIdtfIterator = 
-        m_memoryCtx.Iterator5(
+        ms_context->Iterator5(
             concept, 
             ScType::EdgeDCommonConst, 
             ScType::LinkConst, 
@@ -196,24 +225,54 @@ std::string CreateGlossaryAgent::getMainIdtf(ScAddr const & concept)
         );
     
     if (!mainIdtfIterator->IsValid())
-        return m_memoryCtx.HelperGetSystemIdtf(concept);
+        return ms_context->HelperGetSystemIdtf(concept);
 
     while (mainIdtfIterator->Next())
     {
         ScAddr mainIdtfAddr = mainIdtfIterator->Get(2);
-        bool isValidLang = m_memoryCtx.HelperCheckEdge(
+        bool isValidLang = ms_context->HelperCheckEdge(
             answerLang, 
             mainIdtfAddr,
             ScType::EdgeAccessConstPosPerm);
         if (isValidLang) 
         {
             std::string stringContent;
-            if (m_memoryCtx.GetLinkContent(mainIdtfAddr, stringContent))
+            if (ms_context->GetLinkContent(mainIdtfAddr, stringContent))
             {
                 return stringContent;
             }
         }
     }
 
-    return m_memoryCtx.HelperGetSystemIdtf(concept);
+    return ms_context->HelperGetSystemIdtf(concept);
+}
+
+std::string CreateGlossaryAgent::processConceptEntityScnTex(
+    ScMemoryContext * ms_context,
+    ScAddr const & concept,
+    ScAddr const & parameter,
+    int indentLevel
+)
+{
+    ScTemplate templ;
+    makeDefinitionTemplate(concept, parameter, templ);
+
+    ScTemplateSearchResult result;
+    ms_context->HelperSearchTemplate(templ, result);
+
+    if (!result.IsEmpty()) 
+    {
+        for (size_t currentTemplate = 0; currentTemplate < result.Size(); currentTemplate++)
+        {
+            std::string linkContent;
+            ms_context->GetLinkContent(result[currentTemplate][entityVarIdtf], linkContent);
+            return makeIndent(indentLevel) 
+                + "\\scntext{" 
+                + formatForTex(getMainIdtf(ms_context, parameter)) 
+                + "}{"
+                + formatForTex(linkContent)
+                + "}\n";
+        }
+    }
+    return "";
 }

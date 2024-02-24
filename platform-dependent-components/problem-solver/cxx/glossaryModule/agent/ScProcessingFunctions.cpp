@@ -80,6 +80,9 @@ void CreateGlossaryAgent::processConceptByParameterSc(
         {GlossaryKeynodes::nrel_main_idtf, CreateGlossaryAgent::processConceptIdtfSc},
         {GlossaryKeynodes::nrel_idtf, CreateGlossaryAgent::processConceptIdtfSc},
         {GlossaryKeynodes::nrel_system_identifier, CreateGlossaryAgent::processConceptIdtfSc},
+        {GlossaryKeynodes::definition, CreateGlossaryAgent::processConceptEntitySc},
+        {GlossaryKeynodes::explanation, CreateGlossaryAgent::processConceptEntitySc},
+        {GlossaryKeynodes::note, CreateGlossaryAgent::processConceptEntitySc},
     };
     
     if (parameterFunctionsMap.find(parameter) == parameterFunctionsMap.end())
@@ -91,6 +94,24 @@ void CreateGlossaryAgent::processConceptByParameterSc(
     }
     parameterFunctionsMap[parameter](&m_memoryCtx, concept, parameter, resultStructure, answer);
     
+}
+
+void addIfNotFound(
+    ScMemoryContext * ms_context, 
+    ScAddr const & addrForAdd, 
+    ScAddr const & resultStructure, 
+    ScAddrVector & output
+)
+{
+    if (std::find(output.begin(), output.end(), addrForAdd) == output.end())
+    {
+        ScAddr accessArc = ms_context->CreateEdge(
+            ScType::EdgeAccessConstPosPerm, 
+            resultStructure, 
+            addrForAdd
+        );
+        output.insert(output.end(), {accessArc, addrForAdd});
+    }
 }
 
 void CreateGlossaryAgent::processConceptIdtfSc(
@@ -112,15 +133,7 @@ void CreateGlossaryAgent::processConceptIdtfSc(
     if (!idtfIterator->IsValid())
         return;
 
-    if (std::find(answer.begin(), answer.end(), parameter) == answer.end()) 
-    {
-        ScAddr accessArc = ms_context->CreateEdge(
-            ScType::EdgeAccessConstPosPerm, 
-            resultStructure, 
-            parameter
-        );
-        answer.insert(answer.end(), {accessArc, parameter});
-    }
+    addIfNotFound(ms_context, parameter, resultStructure, answer);
 
     while (idtfIterator->Next())
     {
@@ -142,6 +155,48 @@ void CreateGlossaryAgent::processConceptIdtfSc(
                 addrForAdd
             );
             answer.insert(answer.end(), {accessArc, addrForAdd});
+        }
+    }
+}
+
+void CreateGlossaryAgent::processConceptEntitySc(
+    ScMemoryContext * ms_context,
+    ScAddr const & concept, 
+    ScAddr const & parameter, 
+    ScAddr const & resultStructure,
+    ScAddrVector & answer
+)
+{
+    ScTemplate templ;
+    makeDefinitionTemplate(concept, parameter, templ);
+
+    ScTemplateSearchResult result;
+    ms_context->HelperSearchTemplate(templ, result);
+
+    auto addIfNotFoundLocal = [&](ScAddr const & addrForAdd){
+        addIfNotFound(ms_context, addrForAdd, resultStructure, answer);
+    };
+
+    if (!result.IsEmpty())
+    {
+        addIfNotFoundLocal(parameter);
+        addIfNotFoundLocal(scAgentsCommon::CoreKeynodes::rrel_key_sc_element);
+        addIfNotFoundLocal(scAgentsCommon::CoreKeynodes::rrel_key_sc_element);
+        addIfNotFoundLocal(scAgentsCommon::CoreKeynodes::nrel_sc_text_translation);
+        addIfNotFoundLocal(GlossaryKeynodes::rrel_example);
+
+        for (size_t currentTemplate = 0; currentTemplate < result.Size();currentTemplate++)
+        {
+            for (auto const & currentIdtf : idtfsVarForAdd)
+            {
+                ScAddr addrForAdd = result[currentTemplate][currentIdtf];
+                ScAddr accessArc = ms_context->CreateEdge(
+                    ScType::EdgeAccessConstPosPerm, 
+                    resultStructure, 
+                    addrForAdd
+                );
+                answer.insert(answer.end(), {accessArc, addrForAdd});
+            }
         }
     }
 }

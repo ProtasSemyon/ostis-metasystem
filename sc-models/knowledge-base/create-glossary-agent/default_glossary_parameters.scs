@@ -1,3 +1,7 @@
 default_glossary_parameters
   ->nrel_system_identifier;
-  ->nrel_idtf;;
+  ->nrel_main_idtf;
+  ->nrel_idtf;
+  ->definition;
+  ->explanation;
+  ->note;;
