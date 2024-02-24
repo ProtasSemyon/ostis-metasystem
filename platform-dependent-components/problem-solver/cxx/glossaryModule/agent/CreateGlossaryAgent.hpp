@@ -1,9 +1,3 @@
-/*
- * This source file is part of an OSTIS project. For the latest info, see http://ostis.net
- * Distributed under the MIT License
- * (See accompanying file COPYING.MIT or copy at http://opensource.org/licenses/MIT)
- */
-
 #pragma once
 
 #include "sc-memory/kpm/sc_agent.hpp"
@@ -19,6 +13,29 @@ class CreateGlossaryAgent : public ScAgent
   SC_GENERATED_BODY()
 
   private:
+    using ProcessConceptMapSc = 
+      std::map<ScAddr, 
+        std::function<void(
+          ScMemoryContext * , 
+          ScAddr const & , 
+          ScAddr const &, 
+          ScAddr const &, 
+          ScAddrVector&)
+        >,
+        ScAddrLessFunc
+      >;
+    
+    using ProcessConceptMapScnTex =
+      std::map<ScAddr,
+        std::function<std::string(
+          ScMemoryContext * ,
+          ScAddr const &,
+          ScAddr const &,
+          int)
+        >,
+        ScAddrLessFunc
+      >;
+
     bool checkAction(ScAddr const & questionNode);
 
     ScAddrVector getValidSetElementsByTypeAndValidSet(
@@ -27,13 +44,82 @@ class CreateGlossaryAgent : public ScAgent
       ScAddr const & validSet, 
       std::string warnMessage);
 
-    ScAddr formResultNode(ScAddr const & setOfSubjDomains, ScAddrVector & answerElements);
+    ScAddrVector getConceptsFromSubjDomain(ScAddr const & subjDomain);
 
-    void clearPreviousResultNode(ScAddr const & setOfSubjDomains);
+    void getConceptsFromSubjDomainByRelationType(
+      ScAddr const & subjDomain, 
+      ScAddr const & relationType,
+      ScAddrVector & output);
+
+    //SC processing start
+
+    void formGlossaryScFormat(
+      ScAddr const & setOfSubjDomains, 
+      ScAddrVector const & subjectDomains, 
+      ScAddrVector const & parameters, 
+      ScAddrVector & answer);
+
+    ScAddr formScResultNode(ScAddr const & setOfSubjDomains, ScAddrVector & answerElements);
+
+    void clearPreviousResultNode(ScAddr const & setOfSubjDomains, ScType const & resultNodeType);
+
+    void processConceptByParametersSc(
+      ScAddr const & concept, 
+      ScAddrVector const & parameters, 
+      ScAddr const & resultStructure,
+      ScAddrVector & answer);
+
+    void processConceptByParameterSc(
+      ScAddr const & concept, 
+      ScAddr const & parameter, 
+      ScAddr const & resultStructure,
+      ScAddrVector & answer);
+
+    static void processConceptIdtfSc(
+      ScMemoryContext * ms_context,
+      ScAddr const & concept, 
+      ScAddr const & parameter, 
+      ScAddr const & resultStructure,
+      ScAddrVector & answer);
+    //SC processing end
+
+    //SCn processing start
+    using ScnTexConceptsMap = std::multimap<std::string, std::string>;
+
+    ScAddr formScnTexResultNode(ScAddr const & setOfSubjDomains, ScAddrVector & answerElements);
+
+    void formGlossaryScnTexFormat(
+      ScAddr const & setOfSubjDomains, 
+      ScAddrVector const & subjectDomains, 
+      ScAddrVector const & parameters,
+      ScAddrVector & answer);
+
+    void processConceptByParametersScnTex(
+      ScAddr const & concept, 
+      ScAddrVector const & parameters, 
+      ScnTexConceptsMap & conceptsMap,
+      int indentLevel);
+    
+    std::string processConceptByParameterScnTex(
+      ScAddr const & concept, 
+      ScAddr const & parameter,
+      int indentLevel);
+
+    static std::string processConceptIdtfScnTex(
+      ScMemoryContext * ms_context,
+      ScAddr const & concept, 
+      ScAddr const & parameter,
+      int indentLevel);
+
+    std::string getMainIdtf(ScAddr const & concept);
+
+    //SCn processing end
 
     std::string formatToLog(std::string const & message);
 
     sc_result exitInvalidParams(std::string const & message, ScAddr const & questionNode);
+
+    static ScAddr answerLang;
 };
 
 }  // namespace glossaryModule

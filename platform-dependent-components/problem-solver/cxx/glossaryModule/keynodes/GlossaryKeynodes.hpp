@@ -1,9 +1,3 @@
-/*
- * This source file is part of an OSTIS project. For the latest info, see http://ostis.net
- * Distributed under the MIT License
- * (See accompanying file COPYING.MIT or copy at http://opensource.org/licenses/MIT)
- */
-
 #pragma once
 
 #include "sc-memory/sc_addr.hpp"
@@ -35,12 +29,30 @@ public:
   SC_PROPERTY(Keynode("nrel_glossary"), ForceCreate)
   static ScAddr nrel_glossary;
 
+  SC_PROPERTY(Keynode("rrel_maximum_studied_object_class"), ForceCreate)
+  static ScAddr rrel_maximum_studied_object_class;
+
+  SC_PROPERTY(Keynode("rrel_explored_relation"), ForceCreate)
+  static ScAddr rrel_explored_relation;
+
+  SC_PROPERTY(Keynode("rrel_not_maximum_studied_object_class"), ForceCreate)
+  static ScAddr rrel_not_maximum_studied_object_class;
+
+  SC_PROPERTY(Keynode("format_html"), ForceCreate)
+  static ScAddr format_html;
+
+  SC_PROPERTY(Keynode("nrel_format"), ForceCreate)
+  static ScAddr nrel_format;
+
   //Valid glossary parameters
   SC_PROPERTY(Keynode("nrel_main_idtf"), ForceCreate)
   static ScAddr nrel_main_idtf;
 
   SC_PROPERTY(Keynode("nrel_idtf"), ForceCreate)
   static ScAddr nrel_idtf;
+
+  SC_PROPERTY(Keynode("nrel_system_identifier"), ForceCreate)
+  static ScAddr nrel_system_identifier;
 
 };
 

@@ -1,28 +1,14 @@
-/*
- * This source file is part of an OSTIS project. For the latest info, see http://ostis.net
- * Distributed under the MIT License
- * (See accompanying file COPYING.MIT or copy at http://opensource.org/licenses/MIT)
- */
-
-#include "GlossaryModule.hpp"
-
-#include "sc-agents-common/keynodes/coreKeynodes.hpp"
-#include "sc-agents-common/utils/CommonUtils.hpp"
-#include "sc-agents-common/utils/AgentUtils.hpp"
-#include "sc-agents-common/utils/IteratorUtils.hpp"
-
 #include "keynodes/GlossaryKeynodes.hpp"
 #include "CreateGlossaryAgent.hpp"
 
-#include "sc-memory/sc_addr.hpp"
-#include "sc-memory/sc_iterator.hpp"
-#include "sc-memory/sc_template.hpp"
-#include "sc-memory/sc_type.hpp"
-#include "sc-memory/utils/sc_log.hpp"
+#include "sc-agents-common/utils/AgentUtils.hpp"
+#include "sc-agents-common/utils/IteratorUtils.hpp"
 
 using namespace utils;
 
 using namespace glossaryModule;
+
+ScAddr CreateGlossaryAgent::answerLang;
 
 SC_AGENT_IMPLEMENTATION(CreateGlossaryAgent)
 {
@@ -65,6 +51,10 @@ SC_AGENT_IMPLEMENTATION(CreateGlossaryAgent)
     {
         return exitInvalidParams("language node not found..", questionNode);
     }
+    else 
+    {
+        CreateGlossaryAgent::answerLang = langAddr;
+    }
 
     if (!m_memoryCtx.IsElement(parametersSetAddr))
     {
@@ -91,15 +81,13 @@ SC_AGENT_IMPLEMENTATION(CreateGlossaryAgent)
             "is not a valid parameter"
         );
 
+    //Creating glossary
     ScAddrVector answer;
 
-    ScAddr resultsSetStruct = formResultNode(subjectDomainsSetAddr, answer);
+    std::map<std::string, std::string> scnTexForConceptsMap;
 
-    for (ScAddr const & subjDomain : subjectDomains)
-    {
-        ScAddr accessArc =  m_memoryCtx.CreateEdge(ScType::EdgeAccessConstPosPerm, resultsSetStruct, subjDomain);
-        answer.insert(answer.end(), {accessArc, subjDomain});
-    }
+    formGlossaryScFormat(subjectDomainsSetAddr, subjectDomains, parameters, answer);
+    formGlossaryScnTexFormat(subjectDomainsSetAddr, subjectDomains, parameters, answer);
 
     AgentUtils::finishAgentWork(&m_memoryCtx, questionNode, answer, true);
     SC_LOG_DEBUG("CreateGlossaryAgent finished");
@@ -107,48 +95,68 @@ SC_AGENT_IMPLEMENTATION(CreateGlossaryAgent)
     return SC_RESULT_OK;
 }
 
-ScAddr CreateGlossaryAgent::formResultNode(ScAddr const & setOfSubjDomains, ScAddrVector & answerElements)
+void CreateGlossaryAgent::clearPreviousResultNode(ScAddr const & setOfSubjDomains, ScType const & resultNodeType)
 {
-    clearPreviousResultNode(setOfSubjDomains);
-
-    ScAddr const & resultsSetStruct = m_memoryCtx.CreateNode(ScType::NodeConstStruct);
-    ScAddr const & createGlossaryResultRelationPair = 
-        m_memoryCtx.CreateEdge(
-            ScType::EdgeDCommonConst, 
-            setOfSubjDomains, 
-            resultsSetStruct
-        );
-    ScAddr const & relationAccessArc = 
-        m_memoryCtx.CreateEdge(
-            ScType::EdgeAccessConstPosPerm, 
-            GlossaryKeynodes::nrel_glossary, 
-            createGlossaryResultRelationPair
-        );
-    answerElements.insert(answerElements.end(), {
-        resultsSetStruct, 
-        createGlossaryResultRelationPair, 
-        relationAccessArc
-        }
-    );
-
-    return resultsSetStruct;
-}
-
-void CreateGlossaryAgent::clearPreviousResultNode(ScAddr const & setOfSubjDomains)
-{
-    ScIterator5Ptr previousResultsStructuresIterator = 
+    ScIterator5Ptr previousResultsIterator = 
         m_memoryCtx.Iterator5(
             setOfSubjDomains,
             ScType::EdgeDCommonConst, 
-            ScType::NodeConstStruct, 
+            resultNodeType, 
             ScType::EdgeAccessConstPosPerm, 
             GlossaryKeynodes::nrel_glossary
         );
 
-    while (previousResultsStructuresIterator->Next())
+    while (previousResultsIterator->Next())
     {
-        m_memoryCtx.EraseElement(previousResultsStructuresIterator->Get(1));
-        m_memoryCtx.EraseElement(previousResultsStructuresIterator->Get(2));
+        //m_memoryCtx.EraseElement(previousResultsIterator->Get(1));
+        m_memoryCtx.EraseElement(previousResultsIterator->Get(2));
+        //m_memoryCtx.EraseElement(previousResultsIterator->Get(3));
+    }
+}
+
+ScAddrVector CreateGlossaryAgent::getConceptsFromSubjDomain(ScAddr const & subjDomain)
+{
+    ScAddrVector allConcepts;
+
+    getConceptsFromSubjDomainByRelationType(
+        subjDomain, 
+        GlossaryKeynodes::rrel_maximum_studied_object_class, 
+        allConcepts
+    );
+
+    getConceptsFromSubjDomainByRelationType(
+        subjDomain, 
+        GlossaryKeynodes::rrel_explored_relation, 
+        allConcepts
+    );
+
+    getConceptsFromSubjDomainByRelationType(
+        subjDomain, 
+        GlossaryKeynodes::rrel_not_maximum_studied_object_class, 
+        allConcepts
+    );
+
+    return allConcepts;
+}
+
+void CreateGlossaryAgent::getConceptsFromSubjDomainByRelationType(
+    ScAddr const & subjDomain, 
+    ScAddr const & relationType, 
+    ScAddrVector & output
+)
+{
+    ScIterator5Ptr subjDomainConceptsIterator = 
+        m_memoryCtx.Iterator5(
+            subjDomain,
+            ScType::EdgeAccessConstPosPerm, 
+            ScType::Unknown, 
+            ScType::EdgeAccessConstPosPerm, 
+            relationType
+        );
+
+    while (subjDomainConceptsIterator->Next())
+    {
+        output.emplace_back(subjDomainConceptsIterator->Get(2));
     }
 }
 
