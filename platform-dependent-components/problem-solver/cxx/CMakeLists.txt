@@ -1,2 +1,3 @@
 add_subdirectory(identifiersModule)
 add_subdirectory(glossaryModule)
+add_subdirectory(semanticNeighborhoodModule)

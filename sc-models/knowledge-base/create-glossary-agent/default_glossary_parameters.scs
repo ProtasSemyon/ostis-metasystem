@@ -1,7 +1,12 @@
-default_glossary_parameters
-  ->nrel_system_identifier;
-  ->nrel_main_idtf;
-  ->nrel_idtf;
-  ->definition;
-  ->explanation;
-  ->note;;
+@pair1 = (default_glossary_parameters->rrel_1:nrel_system_identifier);;
+@pair2 = (default_glossary_parameters->nrel_main_idtf);;
+@pair3 = (default_glossary_parameters->nrel_idtf);;
+@pair4 = (default_glossary_parameters->definition);;
+@pair5 = (default_glossary_parameters->explanation);;
+@pair6 = (default_glossary_parameters->note);;
+
+@pair1 => nrel_basic_sequence: @pair2;;
+@pair2 => nrel_basic_sequence: @pair3;;
+@pair3 => nrel_basic_sequence: @pair4;;
+@pair4 => nrel_basic_sequence: @pair5;;
+@pair5 => nrel_basic_sequence: @pair6;;
