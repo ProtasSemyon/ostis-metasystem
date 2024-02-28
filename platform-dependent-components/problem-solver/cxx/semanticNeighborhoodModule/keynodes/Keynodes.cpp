@@ -16,4 +16,12 @@ namespace semanticNeighborhood
 
   ScAddr Keynodes::note;
 
+  ScAddr Keynodes::nrel_subdividing;
+
+  ScAddr Keynodes::subject_domain;
+
+  ScAddr Keynodes::nrel_strict_inclusion;
+
+  ScAddr Keynodes::nrel_authors;
+
 }  // namespace semanticNeighborhood

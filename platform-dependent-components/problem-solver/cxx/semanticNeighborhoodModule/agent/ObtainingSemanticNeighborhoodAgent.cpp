@@ -102,6 +102,11 @@ void ObtainingSemanticNeighborhoodAgent::obtainSemanticNeighborhoodByParameter(
         {Keynodes::definition, processEntityParameter},
         {Keynodes::explanation, processEntityParameter},
         {Keynodes::note, processEntityParameter},
+        {Keynodes::nrel_subdividing, processSubdividingParameter},
+        {Keynodes::subject_domain, processSubjDomainParameter},
+        {scAgentsCommon::CoreKeynodes::nrel_inclusion, processOutNoroleRelationParameter},
+        {Keynodes::nrel_strict_inclusion, processOutNoroleRelationParameter},
+        {Keynodes::nrel_authors, processOutNoroleRelationParameter}
     };
 
     if (functionsByParameterMap.find(parameter) == functionsByParameterMap.end()) {
@@ -179,6 +184,99 @@ void ObtainingSemanticNeighborhoodAgent::processEntityParameter(
         {
             answer.emplace_back(result[currentTemplResult][currentVarName]);
         }
+    }
+}
+
+void ObtainingSemanticNeighborhoodAgent::processSubdividingParameter(
+    ScMemoryContext * ms_context,
+    ScAddr const & concept,
+    ScAddr const & parameter,
+    ScAddrVector & answer
+)
+{
+    ScIterator5Ptr subdivIterator = ms_context->Iterator5(
+        ScType::NodeConstTuple, 
+        ScType::EdgeDCommonConst, 
+        concept, 
+        ScType::EdgeAccessConstPosPerm, 
+        parameter);
+
+    if (!subdivIterator->IsValid())
+        return;
+
+    answer.emplace_back(parameter);
+
+    while (subdivIterator->Next()) 
+    {
+        ScAddr const & subdivTuple = subdivIterator->Get(0);
+
+        answer.insert(answer.end(), {subdivTuple, subdivIterator->Get(1), subdivIterator->Get(3)});
+
+        ScIterator3Ptr subdivElementsIterator = ms_context->Iterator3(
+            subdivTuple, 
+            ScType::EdgeAccessConstPosPerm, 
+            ScType::Unknown);
+
+        while (subdivElementsIterator->Next())
+        {
+            answer.insert(answer.end(), {
+                subdivElementsIterator->Get(1), 
+                subdivElementsIterator->Get(2)});
+        }
+    }
+}
+
+void ObtainingSemanticNeighborhoodAgent::processSubjDomainParameter(
+    ScMemoryContext * ms_context,
+    ScAddr const & concept,
+    ScAddr const & parameter,
+    ScAddrVector & answer
+)
+{
+    ScTemplate templ;
+    Utils::makeSubjectDomainMembershipTemplate(concept, templ);
+
+    ScTemplateSearchResult result;
+    ms_context->HelperSearchTemplate(templ, result);
+
+    if (result.IsEmpty())
+        return;
+
+    for (size_t currentTemplResult = 0;currentTemplResult < result.Size(); currentTemplResult++)
+    {
+        for (auto const & currentVarName: Utils::subjectDomainMembershipTemplateVarNames)
+        {
+            answer.emplace_back(result[currentTemplResult][currentVarName]);
+        }
+    }
+}
+
+void ObtainingSemanticNeighborhoodAgent::processOutNoroleRelationParameter(
+    ScMemoryContext * ms_context,
+    ScAddr const & concept,
+    ScAddr const & parameter,
+    ScAddrVector & answer
+)
+{
+    ScIterator5Ptr outRelationIterator = ms_context->Iterator5(
+        concept, 
+        ScType::EdgeDCommonConst, 
+        ScType::Unknown, 
+        ScType::EdgeAccessConstPosPerm, 
+        parameter);
+
+    if (!outRelationIterator->IsValid())
+        return;
+
+    answer.emplace_back(parameter);
+    
+    while (outRelationIterator->Next())
+    {
+        answer.insert(answer.end(), {
+            outRelationIterator->Get(1),
+            outRelationIterator->Get(2),
+            outRelationIterator->Get(3),
+        });
     }
 }
 

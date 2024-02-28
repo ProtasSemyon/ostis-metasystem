@@ -20,6 +20,15 @@ std::vector<std::string> Utils::conceptEntityTemplateVarNames = {
     "_arc7",
 };
 
+std::string Utils::subjDomainVarName = "_subject_domain";
+std::string Utils::roleRelationVarName = "_role_relation";
+
+std::vector<std::string> Utils::subjectDomainMembershipTemplateVarNames = {
+    subjDomainVarName,
+    roleRelationVarName,
+    "_arc1",
+    "_arc2",
+};
 
 void Utils::makeConceptEntityTemplate(
     ScAddr const & concept, 
@@ -58,5 +67,22 @@ void Utils::makeConceptEntityTemplate(
         lang, 
         ScType::EdgeAccessVarPosPerm,
         linkWithDescriptionVarName
+    );
+}
+
+void Utils::makeSubjectDomainMembershipTemplate(ScAddr const & concept, ScTemplate & templ) 
+{
+    templ.Clear();
+    templ.Triple(
+        Keynodes::subject_domain, 
+        ScType::EdgeAccessVarPosPerm,
+        ScType::NodeVar >> subjDomainVarName
+    );
+    templ.Quintuple(
+        subjDomainVarName, 
+        ScType::EdgeAccessVarPosPerm >> "_arc1", 
+        concept, 
+        ScType::EdgeAccessVarPosPerm >> "_arc2", 
+        ScType::NodeVarRole >> roleRelationVarName
     );
 }

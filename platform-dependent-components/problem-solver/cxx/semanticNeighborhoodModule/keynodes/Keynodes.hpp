@@ -31,6 +31,18 @@ public:
 
   SC_PROPERTY(Keynode("note"), ForceCreate)
   static ScAddr note;
+
+  SC_PROPERTY(Keynode("nrel_subdividing"), ForceCreate)
+  static ScAddr nrel_subdividing;
+
+  SC_PROPERTY(Keynode("subject_domain"), ForceCreate)
+  static ScAddr subject_domain;
+
+  SC_PROPERTY(Keynode("nrel_strict_inclusion"), ForceCreate)
+  static ScAddr nrel_strict_inclusion;
+
+  SC_PROPERTY(Keynode("nrel_authors"), ForceCreate)
+  static ScAddr nrel_authors;
 };
 
 } // namespace semanticNeighborhood

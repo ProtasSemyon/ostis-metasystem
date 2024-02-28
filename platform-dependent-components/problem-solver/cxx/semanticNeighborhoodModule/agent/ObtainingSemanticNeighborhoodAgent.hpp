@@ -48,6 +48,27 @@ class ObtainingSemanticNeighborhoodAgent : public ScAgent
       ScAddr const & parameter,
       ScAddrVector & answer
     );
+
+    static void processSubdividingParameter(
+      ScMemoryContext * ms_context,
+      ScAddr const & concept,
+      ScAddr const & parameter,
+      ScAddrVector & answer
+    );
+
+    static void processSubjDomainParameter(
+      ScMemoryContext * ms_context,
+      ScAddr const & concept,
+      ScAddr const & parameter,
+      ScAddrVector & answer
+    );
+
+    static void processOutNoroleRelationParameter(
+      ScMemoryContext * ms_context,
+      ScAddr const & concept,
+      ScAddr const & parameter,
+      ScAddrVector & answer
+    );
     
 };
 

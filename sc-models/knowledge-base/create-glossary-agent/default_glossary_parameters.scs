@@ -1,12 +1,24 @@
-@pair1 = (default_glossary_parameters->rrel_1:nrel_system_identifier);;
-@pair2 = (default_glossary_parameters->nrel_main_idtf);;
-@pair3 = (default_glossary_parameters->nrel_idtf);;
-@pair4 = (default_glossary_parameters->definition);;
-@pair5 = (default_glossary_parameters->explanation);;
-@pair6 = (default_glossary_parameters->note);;
+default_glossary_parameters_struct = [* 
+  @pair1 = (default_glossary_parameters->rrel_1:nrel_system_identifier);;
+  @pair2 = (default_glossary_parameters->nrel_main_idtf);;
+  @pair3 = (default_glossary_parameters->nrel_idtf);;
+  @pair4 = (default_glossary_parameters->definition);;
+  @pair5 = (default_glossary_parameters->explanation);;
+  @pair6 = (default_glossary_parameters->note);;
+  @pair7 = (default_glossary_parameters->subject_domain);;
+  @pair8 = (default_glossary_parameters->nrel_inclusion);;
+  @pair9 = (default_glossary_parameters->nrel_strict_inclusion);;
+  @pair10 = (default_glossary_parameters->nrel_subdividing);;
+  @pair11 = (default_glossary_parameters->nrel_authors);;
 
-@pair1 => nrel_basic_sequence: @pair2;;
-@pair2 => nrel_basic_sequence: @pair3;;
-@pair3 => nrel_basic_sequence: @pair4;;
-@pair4 => nrel_basic_sequence: @pair5;;
-@pair5 => nrel_basic_sequence: @pair6;;
+  @pair1 => nrel_basic_sequence: @pair2;;
+  @pair2 => nrel_basic_sequence: @pair3;;
+  @pair3 => nrel_basic_sequence: @pair4;;
+  @pair4 => nrel_basic_sequence: @pair5;;
+  @pair5 => nrel_basic_sequence: @pair6;;
+  @pair6 => nrel_basic_sequence: @pair7;;
+  @pair7 => nrel_basic_sequence: @pair8;;
+  @pair8 => nrel_basic_sequence: @pair9;;
+  @pair9 => nrel_basic_sequence: @pair10;;
+  @pair10 => nrel_basic_sequence: @pair11;;
+*];;
