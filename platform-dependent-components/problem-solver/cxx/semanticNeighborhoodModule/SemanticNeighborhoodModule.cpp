@@ -4,6 +4,7 @@
 
 #include "keynodes/Keynodes.hpp"
 #include "agent/ObtainingSemanticNeighborhoodAgent.hpp"
+#include "agent/SemanticNeighborhoodToScnTranslationAgent.hpp"
 
 using namespace semanticNeighborhood;
 
@@ -24,6 +25,7 @@ sc_result SemanticNeighborhoodModule::InitializeImpl()
   else 
   {
     SC_AGENT_REGISTER(ObtainingSemanticNeighborhoodAgent);
+    SC_AGENT_REGISTER(SemanticNeighborhoodToScnTranslationAgent);
   }
 
   return SC_RESULT_OK;
@@ -31,5 +33,6 @@ sc_result SemanticNeighborhoodModule::InitializeImpl()
 sc_result SemanticNeighborhoodModule::ShutdownImpl()
 {
   SC_AGENT_UNREGISTER(ObtainingSemanticNeighborhoodAgent);
+  SC_AGENT_UNREGISTER(SemanticNeighborhoodToScnTranslationAgent);
   return SC_RESULT_OK;
 }

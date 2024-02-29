@@ -3,6 +3,8 @@ set(SEMANTIC_NEIGHBORHOOD_MODULE_SRC "${PROBLEM_SOLVER_PATH}/cxx/semanticNeighbo
 set(SOURCES
         "utils/Utils.hpp"
         "utils/Utils.cpp"
+        "agent/SemanticNeighborhoodToScnTranslationAgent.hpp"
+        "agent/SemanticNeighborhoodToScnTranslationAgent.cpp"
         "agent/ObtainingSemanticNeighborhoodAgent.hpp"
         "agent/ObtainingSemanticNeighborhoodAgent.cpp"
         "keynodes/Keynodes.cpp" 
