@@ -1,0 +1,24 @@
+lib_component_ui_menu_create_glossary = [*
+ui_menu_create_glossary <- ui_user_command_class_atom; ui_user_command_class_view_kb; ui_one_argument_command_class;;
+
+ui_menu_create_glossary 
+=> nrel_main_idtf: 
+	[Какой глоссарий соответствует заданному множеству предметных областей?]
+	(* <- lang_ru;; *);
+=> nrel_idtf: 
+	[Запрос глоссария по множеству предметных областей]
+	(* <- lang_ru;; *);;
+
+ui_menu_create_glossary => ui_nrel_command_template:
+	[*
+		action_create_glossary _-> ._action_create_glossary_instance
+			(*
+				_-> rrel_1::ui_arg_1;;
+        _-> rrel_2::lang_ru;;
+        _-> rrel_3::default_glossary_parameters;;
+			*);;
+		._action_create_glossary_instance _<- question;;
+	*];;
+
+ui_menu_create_glossary => ui_nrel_command_lang_template: [Какой глоссарий соответствует $ui_arg_1?] (* <- lang_ru;; *);;
+*];;

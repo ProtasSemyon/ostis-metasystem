@@ -1,0 +1,9 @@
+lib_component_ui_menu_create_glossary
+=> nrel_main_idtf:
+	[Компонент библиотеки. Команда пользовательского интерфейса формирования глоссария по заданному множеству предметных областей]
+	(* <- lang_ru;; *);
+	[Library component. User interface command for generating a glossary for a given set of subject domains]
+	(* <- lang_en;; *);
+
+<- library_of_platform_independent_reusable_components;
+<- library_of_atomic_reusable_components;;

@@ -4,3 +4,6 @@ ostis-web-platform/repo.path
 # metasystem kb
 sc-models
 !sc-models/user-interface
+
+#agents ui
+platform-dependent-components/problem-solver/cxx/glossaryModule/specification/create-glossary-agent
