@@ -25,14 +25,10 @@ namespace ModuleTest
         Keynodes::InitGlobal();
     }
 
-    void shutdown(){
-        SC_AGENT_UNREGISTER(ObtainingSemanticNeighborhoodAgent);
-    }
-
     TEST_F(AgentTest, IdtfTest)
     {
         ScMemoryContext & context = *m_ctx;
-        loader.loadScsFile(context, TEST_FILES_DIR_PATH + "correctTest.scs");
+        loader.loadScsFile(context, TEST_FILES_DIR_PATH + "test.scs");
 
         ScAddr const & testActionNode = context.HelperFindBySystemIdtf("test_action_node");
         ScAddr const & paramsNode = context.HelperFindBySystemIdtf("test_idtf_params");
@@ -76,13 +72,13 @@ namespace ModuleTest
         EXPECT_TRUE(context.HelperCheckEdge(answerNode, ru_idtfLink, ScType::EdgeAccessConstPosPerm));
         EXPECT_FALSE(context.HelperCheckEdge(answerNode, en_mainIdtfLink, ScType::EdgeAccessConstPosPerm));
 
-        shutdown();
+        SC_AGENT_UNREGISTER(ObtainingSemanticNeighborhoodAgent);
     }
 
     TEST_F(AgentTest, descriptionTest)
     {
                 ScMemoryContext & context = *m_ctx;
-        loader.loadScsFile(context, TEST_FILES_DIR_PATH + "correctTest.scs");
+        loader.loadScsFile(context, TEST_FILES_DIR_PATH + "test.scs");
 
         ScAddr const & testActionNode = context.HelperFindBySystemIdtf("test_action_node");
         ScAddr const & paramsNode = context.HelperFindBySystemIdtf("test_description_params");
@@ -126,13 +122,98 @@ namespace ModuleTest
         EXPECT_TRUE(context.HelperCheckEdge(answerNode, ru_explanationLink, ScType::EdgeAccessConstPosPerm));
         EXPECT_TRUE(context.HelperCheckEdge(answerNode, ru_noteLink, ScType::EdgeAccessConstPosPerm));
 
-        shutdown();
+        SC_AGENT_UNREGISTER(ObtainingSemanticNeighborhoodAgent);
+    }
+
+    TEST_F(AgentTest, subjDomainTest)
+    {
+        ScMemoryContext & context = *m_ctx;
+        loader.loadScsFile(context, TEST_FILES_DIR_PATH + "test.scs");
+
+        ScAddr const & testActionNode = context.HelperFindBySystemIdtf("test_action_node");
+        ScAddr const & paramsNode = context.HelperFindBySystemIdtf("test_subj_domain_params");
+
+        ScAgentInit(true);
+        initialize();
+
+        SC_AGENT_REGISTER(ObtainingSemanticNeighborhoodAgent);
+
+        ScAddr accessArc = context.CreateEdge(ScType::EdgeAccessConstPosPerm, testActionNode, paramsNode);
+        context.CreateEdge(ScType::EdgeAccessConstPosTemp, scAgentsCommon::CoreKeynodes::rrel_2, accessArc);
+
+        context.CreateEdge(
+            ScType::EdgeAccessConstPosPerm, 
+            scAgentsCommon::CoreKeynodes::question_initiated, 
+            testActionNode);
+
+        utils::AgentUtils::applyAction(&context, testActionNode, WAIT_TIME);
+
+        EXPECT_TRUE(context.HelperCheckEdge(
+            scAgentsCommon::CoreKeynodes::question_finished_successfully, 
+            testActionNode, 
+            ScType::EdgeAccessConstPosPerm));
+        
+        ScAddr const & answerNode = utils::IteratorUtils::getAnyByOutRelation(&context, testActionNode, scAgentsCommon::CoreKeynodes::nrel_answer);
+        
+        EXPECT_TRUE(answerNode.IsValid());
+
+        ScAddr const & test_subject_domain = context.HelperFindBySystemIdtf("test_subject_domain");
+        EXPECT_TRUE(test_subject_domain.IsValid());
+
+        EXPECT_TRUE(context.HelperCheckEdge(answerNode, test_subject_domain, ScType::EdgeAccessConstPosPerm));
+
+        SC_AGENT_UNREGISTER(ObtainingSemanticNeighborhoodAgent);
+    }
+
+    TEST_F(AgentTest, subdividingTest)
+    {
+        ScMemoryContext & context = *m_ctx;
+        loader.loadScsFile(context, TEST_FILES_DIR_PATH + "test.scs");
+
+        ScAddr const & testActionNode = context.HelperFindBySystemIdtf("test_action_node");
+        ScAddr const & paramsNode = context.HelperFindBySystemIdtf("test_subdividing_params");
+
+        ScAgentInit(true);
+        initialize();
+
+        SC_AGENT_REGISTER(ObtainingSemanticNeighborhoodAgent);
+
+        ScAddr accessArc = context.CreateEdge(ScType::EdgeAccessConstPosPerm, testActionNode, paramsNode);
+        context.CreateEdge(ScType::EdgeAccessConstPosTemp, scAgentsCommon::CoreKeynodes::rrel_2, accessArc);
+
+        context.CreateEdge(
+            ScType::EdgeAccessConstPosPerm, 
+            scAgentsCommon::CoreKeynodes::question_initiated, 
+            testActionNode);
+
+        utils::AgentUtils::applyAction(&context, testActionNode, WAIT_TIME);
+
+        EXPECT_TRUE(context.HelperCheckEdge(
+            scAgentsCommon::CoreKeynodes::question_finished_successfully, 
+            testActionNode, 
+            ScType::EdgeAccessConstPosPerm));
+        
+        ScAddr const & answerNode = utils::IteratorUtils::getAnyByOutRelation(&context, testActionNode, scAgentsCommon::CoreKeynodes::nrel_answer);
+        
+        EXPECT_TRUE(answerNode.IsValid());
+
+        ScAddr const & subdiv_1 = context.HelperFindBySystemIdtf("subdiv_1");
+        ScAddr const & subdiv_2 = context.HelperFindBySystemIdtf("subdiv_2");
+        ScAddr const & subdiv_3 = context.HelperFindBySystemIdtf("subdiv_3");
+        ScAddr const & subdiv_4 = context.HelperFindBySystemIdtf("subdiv_4");
+
+        EXPECT_TRUE(context.HelperCheckEdge(answerNode, subdiv_1, ScType::EdgeAccessConstPosPerm));
+        EXPECT_TRUE(context.HelperCheckEdge(answerNode, subdiv_2, ScType::EdgeAccessConstPosPerm));
+        EXPECT_TRUE(context.HelperCheckEdge(answerNode, subdiv_3, ScType::EdgeAccessConstPosPerm));
+        EXPECT_TRUE(context.HelperCheckEdge(answerNode, subdiv_4, ScType::EdgeAccessConstPosPerm));
+
+        SC_AGENT_UNREGISTER(ObtainingSemanticNeighborhoodAgent);
     }
 
     TEST_F(AgentTest, maxTest)
     {
         ScMemoryContext & context = *m_ctx;
-        loader.loadScsFile(context, TEST_FILES_DIR_PATH + "correctTest.scs");
+        loader.loadScsFile(context, TEST_FILES_DIR_PATH + "test.scs");
 
         ScAddr const & testActionNode = context.HelperFindBySystemIdtf("test_action_node");
         ScAddr const & paramsNode = context.HelperFindBySystemIdtf("max_parameters");
@@ -161,13 +242,13 @@ namespace ModuleTest
 
         EXPECT_TRUE(answerNode.IsValid());
 
-        shutdown();
+        SC_AGENT_UNREGISTER(ObtainingSemanticNeighborhoodAgent);
     }
 
     TEST_F(AgentTest, noParametersTest)
     {
         ScMemoryContext & context = *m_ctx;
-        loader.loadScsFile(context, TEST_FILES_DIR_PATH + "correctTest.scs");
+        loader.loadScsFile(context, TEST_FILES_DIR_PATH + "test.scs");
 
         ScAddr const & testActionNode = context.HelperFindBySystemIdtf("test_action_node");
 
@@ -188,6 +269,6 @@ namespace ModuleTest
             testActionNode, 
             ScType::EdgeAccessConstPosPerm));
 
-        shutdown();
+        SC_AGENT_UNREGISTER(ObtainingSemanticNeighborhoodAgent);
     }
 }
