@@ -3,8 +3,6 @@ set(GLOSSARY_MODULE_SRC "${PROBLEM_SOLVER_PATH}/cxx/glossaryModule")
 set(SOURCES
         "agent/CreateGlossaryAgent.hpp"
         "agent/CreateGlossaryAgent.cpp"
-        "agent/ScProcessingFunctions.cpp"
-        "agent/ScnTexProcessingFunctions.cpp"
         "keynodes/GlossaryKeynodes.cpp" 
         "keynodes/GlossaryKeynodes.hpp"
         "GlossaryModule.cpp" 

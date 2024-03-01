@@ -3,6 +3,7 @@
 
 #include "sc-agents-common/utils/AgentUtils.hpp"
 #include "sc-agents-common/utils/IteratorUtils.hpp"
+#include "sc-agents-common/utils/CommonUtils.hpp"
 
 using namespace utils;
 
@@ -10,20 +11,7 @@ using namespace glossaryModule;
 
 ScAddr CreateGlossaryAgent::answerLang;
 
-std::vector<std::string> CreateGlossaryAgent::idtfsVarForAdd = {
-        "_defSet",
-        "_defSet2",
-        "_definition",
-        "_arc1",
-        "_arc2",
-        "_arc3",
-        "_arc4",
-        "_arc5",
-        "_arc6",
-        "_arc7",
-    };
-
-std::string CreateGlossaryAgent::entityVarIdtf = "_definition";
+int const kWaitTime = 1000;
 
 SC_AGENT_IMPLEMENTATION(CreateGlossaryAgent)
 {
@@ -77,32 +65,12 @@ SC_AGENT_IMPLEMENTATION(CreateGlossaryAgent)
         SC_LOG_WARNING(formatToLog(
             "parameters set node not found. By default, "
             + m_memoryCtx.HelperGetSystemIdtf(parametersSetAddr) + " is used."));
-    }
-
-    //Sets elements validation
-    ScAddrVector subjectDomains = 
-        getValidSetElementsByTypeAndValidSet(
-            subjectDomainsSetAddr, 
-            ScType::NodeConstStruct, 
-            GlossaryKeynodes::subject_domain, 
-            "is not a subject domain"
-        );        
+    }       
     
-    ScAddrVector parameters = 
-        getValidSetElementsByTypeAndValidSet(
-            parametersSetAddr, 
-            ScType::NodeConst, 
-            GlossaryKeynodes::valid_glossary_parameters, 
-            "is not a valid parameter"
-        );
-
     //Creating glossary
     ScAddrVector answer;
 
-    std::map<std::string, std::string> scnTexForConceptsMap;
-
-    formGlossaryScFormat(subjectDomainsSetAddr, subjectDomains, parameters, answer);
-    formGlossaryScnTexFormat(subjectDomainsSetAddr, subjectDomains, parameters, answer);
+    formGlossary(subjectDomainsSetAddr, parametersSetAddr, answer);
 
     AgentUtils::finishAgentWork(&m_memoryCtx, questionNode, answer, true);
     SC_LOG_DEBUG("CreateGlossaryAgent finished");
@@ -110,13 +78,126 @@ SC_AGENT_IMPLEMENTATION(CreateGlossaryAgent)
     return SC_RESULT_OK;
 }
 
-void CreateGlossaryAgent::clearPreviousResultNode(ScAddr const & setOfSubjDomains, ScType const & resultNodeType)
+void CreateGlossaryAgent::formGlossary(ScAddr const & setOfSubjDomains, ScAddr const & params, ScAddrVector & answerElements)
+{
+    clearPreviousResultNode(setOfSubjDomains, ScType::Node);
+    clearPreviousResultNode(setOfSubjDomains, ScType::Link);
+
+    ScAddr const & answerStruct = formScResultNode(setOfSubjDomains, answerElements);
+    ScAddr const & answerLink = formScnTexResultNode(setOfSubjDomains, answerElements);
+
+    std::string answerLinkContent = "\\begin{SCn}\n \\scnstructheader{";
+    answerLinkContent += (answerLang == scAgentsCommon::CoreKeynodes::lang_ru 
+        ? "Глоссарий для "
+        : "Glossary for ");
+
+    std::string setOfSubjDomainsIdtf = CommonUtils::getMainIdtf(&m_memoryCtx, setOfSubjDomains);
+    if (setOfSubjDomainsIdtf.empty())
+        setOfSubjDomainsIdtf = m_memoryCtx.HelperGetSystemIdtf(setOfSubjDomains);
+
+    auto formatForTex = [](std::string const & input){
+        std::string output;
+
+        for (auto const & symbol : input)
+        {
+            if (symbol == '_')
+            {
+                output += "\\_";
+            }
+            else 
+            {
+                output += symbol;
+            }
+        }
+        return output;
+    };
+
+    answerLinkContent += formatForTex(getMainIdtf(setOfSubjDomains)) + "}\n";
+    answerLinkContent += "  \\begin{scnstruct}\n";
+
+    ScAddrVector subjectDomains = getValidSetElementsByTypeAndValidSet(
+        setOfSubjDomains, 
+        ScType::NodeConstStruct, 
+        GlossaryKeynodes::subject_domain, 
+        "is not a subject domain"
+    ); 
+
+    std::multimap<std::string, std::string> conceptScnTex;
+
+    for (auto const & currentSubjDomain : subjectDomains)
+    {
+        ScAddrVector concepts = getConceptsFromSubjDomain(currentSubjDomain);
+
+        for (auto const & concept : concepts)
+        {
+            ScAddr const & actionForScResult = AgentUtils::applyActionAndGetResultIfExists(
+                &m_memoryCtx, 
+                GlossaryKeynodes::action_get_semantic_neighborhood, 
+                {concept, params, answerLang});
+
+            ScAddr const & actionForScnTex = AgentUtils::applyActionAndGetResultIfExists(
+                &m_memoryCtx, 
+                GlossaryKeynodes::action_translate_semantic_neighborhood_to_scn, 
+                {concept, params, answerLang});
+            
+            if (actionForScResult.IsValid())
+            {
+                ScAddrVector resultElements = IteratorUtils::getAllWithType(&m_memoryCtx, actionForScResult, ScType::Unknown);
+                for (auto & el : resultElements) 
+                {
+                    ScAddr arc = m_memoryCtx.CreateEdge(ScType::EdgeAccessConstPosPerm, answerStruct, el);
+                    answerElements.insert(answerElements.end(), {el, arc});
+                }
+
+                ScAddr arc = m_memoryCtx.CreateEdge(ScType::EdgeAccessConstPosPerm, answerStruct, concept);
+                answerElements.insert(answerElements.end(), {concept, arc});
+            }
+            else 
+            {
+                SC_LOG_WARNING(formatToLog("concept '" + m_memoryCtx.HelperGetSystemIdtf(concept) + "' does not have the required semantic neighborhood"));
+            }
+
+            if (actionForScnTex.IsValid())
+            {
+                ScAddr const & linkWithScn = IteratorUtils::getAnyFromSet(&m_memoryCtx, actionForScnTex);
+                if (!linkWithScn.IsValid() || m_memoryCtx.GetElementType(linkWithScn) != ScType::LinkConst)
+                    continue;
+
+                std::string linkContent;
+                m_memoryCtx.GetLinkContent(linkWithScn, linkContent);
+                conceptScnTex.insert({getMainIdtf(concept), linkContent});
+            }
+            else 
+            {
+                SC_LOG_WARNING(formatToLog("concept '" + m_memoryCtx.HelperGetSystemIdtf(concept) + "' does not have the required semantic neighborhood"));
+            }
+        }
+    }
+
+    for (auto const &[conceptName, conceptScn] : conceptScnTex)
+    {
+        answerLinkContent += conceptScn;
+    }
+
+    answerLinkContent += "  \\end{scnstruct}\n";
+    answerLinkContent += "\\end{SCn}\n";
+
+    //It's just for beautiful output in sc-link. 
+    //To get scn-tex text, remove the <pre> tag from 
+    //the beginning and end of the sc-link content
+    answerLinkContent = "<pre>" + answerLinkContent + "</pre>";
+
+    m_memoryCtx.SetLinkContent(answerLink, answerLinkContent);
+
+}
+
+void CreateGlossaryAgent::clearPreviousResultNode(ScAddr const & setOfSubjDomains, ScType const & nodeType)
 {
     ScIterator5Ptr previousResultsIterator = 
         m_memoryCtx.Iterator5(
             setOfSubjDomains,
             ScType::EdgeDCommonConst, 
-            resultNodeType, 
+            nodeType, 
             ScType::EdgeAccessConstPosPerm, 
             GlossaryKeynodes::nrel_glossary
         );
@@ -231,41 +312,97 @@ sc_result CreateGlossaryAgent::exitInvalidParams(std::string const & message, Sc
     return SC_RESULT_ERROR_INVALID_PARAMS;
 }
 
-void CreateGlossaryAgent::makeDefinitionTemplate(ScAddr const & concept, ScAddr const & parameter, ScTemplate & templ)
+ScAddr CreateGlossaryAgent::formScResultNode(ScAddr const & setOfSubjDomains, ScAddrVector & answerElements)
 {
-    templ.Clear();
-    templ.Triple(
-        parameter, 
-        ScType::EdgeAccessVarPosPerm >> "_arc1", 
-        ScType::NodeVar >> "_defSet"
+    ScAddr const & resultsSetStruct = m_memoryCtx.CreateNode(ScType::NodeConstStruct);
+    ScAddr const & createGlossaryResultRelationPair = 
+        m_memoryCtx.CreateEdge(
+            ScType::EdgeDCommonConst, 
+            setOfSubjDomains, 
+            resultsSetStruct
+        );
+    ScAddr const & relationAccessArc = 
+        m_memoryCtx.CreateEdge(
+            ScType::EdgeAccessConstPosPerm, 
+            GlossaryKeynodes::nrel_glossary, 
+            createGlossaryResultRelationPair
+        );
+    answerElements.insert(answerElements.end(), {
+        resultsSetStruct, 
+        createGlossaryResultRelationPair, 
+        relationAccessArc,
+        }
     );
-    templ.Quintuple(
-        "_defSet",
-        ScType::EdgeAccessVarPosPerm >> "_arc2",
-        concept,
-        ScType::EdgeAccessVarPosPerm >> "_arc3",
-        scAgentsCommon::CoreKeynodes::rrel_key_sc_element
-    );
-    templ.Quintuple(
-        ScType::NodeVar >> "_defSet2",
-        ScType::EdgeDCommonVar >> "_arc4",
-        "_defSet", 
-        ScType::EdgeAccessVarPosPerm >> "_arc5",
-        scAgentsCommon::CoreKeynodes::nrel_sc_text_translation
-    );
-    templ.Quintuple(
-        "_defSet2",
-        ScType::EdgeAccessVarPosPerm >> "_arc6",
-        ScType::LinkVar >> "_definition",
-        ScType::EdgeAccessVarPosPerm >> "_arc7",
-        GlossaryKeynodes::rrel_example
-    );
-    templ.Triple(
-        CreateGlossaryAgent::answerLang, 
-        ScType::EdgeAccessVarPosPerm,
-        "_definition"
-    );
+
+    return resultsSetStruct;
 }
+
+ScAddr CreateGlossaryAgent::formScnTexResultNode(ScAddr const & setOfSubjDomains, ScAddrVector & answerElements)
+{
+    ScAddr const & resultLink = m_memoryCtx.CreateLink();
+
+    ScAddr const & edgeBetweenSetAndLink = m_memoryCtx.CreateEdge(
+        ScType::EdgeDCommonConst, 
+        setOfSubjDomains, 
+        resultLink);
+
+    ScAddr const & accessArc = m_memoryCtx.CreateEdge(
+        ScType::EdgeAccessConstPosPerm, 
+        GlossaryKeynodes::nrel_glossary, 
+        edgeBetweenSetAndLink);
+
+    ScAddr formatEdge = m_memoryCtx.CreateEdge(
+        ScType::EdgeDCommonConst, 
+        resultLink,
+        GlossaryKeynodes::format_html);
+        
+    m_memoryCtx.CreateEdge(
+        ScType::EdgeAccessConstPosPerm, 
+        GlossaryKeynodes::nrel_format, 
+        formatEdge);
+    
+    answerElements.insert(answerElements.end(), {
+        resultLink, 
+        edgeBetweenSetAndLink, 
+        accessArc});
+
+    return resultLink;
+}
+
+std::string CreateGlossaryAgent::getMainIdtf(ScAddr const & concept)
+{
+    ScIterator5Ptr mainIdtfIterator = 
+        m_memoryCtx.Iterator5(
+            concept, 
+            ScType::EdgeDCommonConst, 
+            ScType::LinkConst, 
+            ScType::EdgeAccessConstPosPerm, 
+            scAgentsCommon::CoreKeynodes::nrel_main_idtf
+        );
+    
+    if (!mainIdtfIterator->IsValid())
+        return m_memoryCtx.HelperGetSystemIdtf(concept);
+
+    while (mainIdtfIterator->Next())
+    {
+        ScAddr mainIdtfAddr = mainIdtfIterator->Get(2);
+        bool isValidLang = m_memoryCtx.HelperCheckEdge(
+            answerLang, 
+            mainIdtfAddr,
+            ScType::EdgeAccessConstPosPerm);
+        if (isValidLang) 
+        {
+            std::string stringContent;
+            if (m_memoryCtx.GetLinkContent(mainIdtfAddr, stringContent))
+            {
+                return stringContent;
+            }
+        }
+    }
+
+    return m_memoryCtx.HelperGetSystemIdtf(concept);
+}
+
 
 
 

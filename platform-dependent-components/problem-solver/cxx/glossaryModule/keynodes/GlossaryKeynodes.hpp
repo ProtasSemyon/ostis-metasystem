@@ -17,8 +17,11 @@ public:
   SC_PROPERTY(Keynode("action_create_glossary"), ForceCreate)
   static ScAddr action_create_glossary;
 
-  SC_PROPERTY(Keynode("valid_glossary_parameters"), ForceCreate)
-  static ScAddr valid_glossary_parameters;
+  SC_PROPERTY(Keynode("action_get_semantic_neighborhood"), ForceCreate)
+  static ScAddr action_get_semantic_neighborhood;
+
+  SC_PROPERTY(Keynode("action_translate_semantic_neighborhood_to_scn"), ForceCreate)
+  static ScAddr action_translate_semantic_neighborhood_to_scn;
 
   SC_PROPERTY(Keynode("default_glossary_parameters"), ForceCreate)
   static ScAddr default_glossary_parameters;
@@ -46,25 +49,6 @@ public:
 
   SC_PROPERTY(Keynode("rrel_example"), ForceCreate)
   static ScAddr rrel_example;
-  
-  //Valid glossary parameters
-  SC_PROPERTY(Keynode("nrel_main_idtf"), ForceCreate)
-  static ScAddr nrel_main_idtf;
-
-  SC_PROPERTY(Keynode("nrel_idtf"), ForceCreate)
-  static ScAddr nrel_idtf;
-
-  SC_PROPERTY(Keynode("nrel_system_identifier"), ForceCreate)
-  static ScAddr nrel_system_identifier;
-
-  SC_PROPERTY(Keynode("definition"), ForceCreate)
-  static ScAddr definition;
-
-  SC_PROPERTY(Keynode("explanation"), ForceCreate)
-  static ScAddr explanation;
-
-  SC_PROPERTY(Keynode("note"), ForceCreate)
-  static ScAddr note;
 
 };
 

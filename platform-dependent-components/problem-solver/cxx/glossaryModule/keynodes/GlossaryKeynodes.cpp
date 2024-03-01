@@ -7,7 +7,9 @@ namespace glossaryModule
 {
   ScAddr GlossaryKeynodes::action_create_glossary;
 
-  ScAddr GlossaryKeynodes::valid_glossary_parameters;
+  ScAddr GlossaryKeynodes::action_get_semantic_neighborhood;
+
+  ScAddr GlossaryKeynodes::action_translate_semantic_neighborhood_to_scn;
 
   ScAddr GlossaryKeynodes::default_glossary_parameters;
 
@@ -26,17 +28,4 @@ namespace glossaryModule
   ScAddr GlossaryKeynodes::nrel_format;
 
   ScAddr GlossaryKeynodes::rrel_example;
-
-  //Valid glossary parameters
-  ScAddr GlossaryKeynodes::nrel_main_idtf;
-
-  ScAddr GlossaryKeynodes::nrel_idtf;
-
-  ScAddr GlossaryKeynodes::nrel_system_identifier;
-
-  ScAddr GlossaryKeynodes::definition;
-
-  ScAddr GlossaryKeynodes::explanation;
-
-  ScAddr GlossaryKeynodes::note;
 }  // namespace glossaryModule
